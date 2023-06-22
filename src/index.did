@@ -1,0 +1,21 @@
+type ToDo = record {
+  id : text;
+  tag : text;
+  title : text;
+  updated_at : opt nat64;
+  body : text;
+  completed : bool;
+  created_at : nat64;
+};
+type ToDoPayload = record { tag : text; title : text; body : text };
+type _AzleResult = variant { Ok : ToDo; Err : text };
+type _AzleResult_1 = variant { Ok : vec ToDo; Err : text };
+service : () -> {
+  addToDo : (ToDoPayload) -> (_AzleResult);
+  completeToDo : (text) -> (_AzleResult);
+  deleteToDo : (text) -> (_AzleResult);
+  getToDo : (text) -> (_AzleResult) query;
+  getToDos : () -> (_AzleResult_1) query;
+  getToDosByTag : (text, nat64, nat64) -> (_AzleResult_1) query;
+  updateToDo : (text, ToDoPayload) -> (_AzleResult);
+}
