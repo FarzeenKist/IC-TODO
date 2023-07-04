@@ -9,6 +9,7 @@ type ToDo = Record<{
     body: string
     tag: string
     completed: boolean
+    fav: boolean
     created_at: nat64
     updated_at: Opt<nat64>
 }>
@@ -50,6 +51,29 @@ export function getToDosByTag(tag: string, startIndex: nat64, endingIndex: nat64
 }
 
 $query
+export function getFavToDos(startIndex: nat64, endingIndex: nat64): Result<Vec<ToDo>, string> {
+    const length = todosStorage.len()
+    if(length < startIndex || length < endingIndex){
+        return Result.Err("One of the indexes are out of bounds.")
+    }
+    if(startIndex > endingIndex){
+        return Result.Err(`The startIndex: ${startIndex} can't be greater than the endingIndex: ${endingIndex}.`)
+    }
+    if(endingIndex - startIndex > 2){
+        return Result.Err("You can only fetch two items at a time")
+    }
+    const toDos = todosStorage.items();
+    const filteredToDos : Vec<ToDo> = [];
+    for(let i = startIndex; i < endingIndex;i++){
+        if(toDos[Number(i)][1].fav){
+            filteredToDos.push(toDos[Number(i)][1]);
+        }
+    }
+    
+    return Result.Ok(filteredToDos)
+}
+
+$query
 export function getToDo(id: string): Result<ToDo, string> {
     return match(todosStorage.get(id), {
         Some: (todo) => Result.Ok<ToDo, string>(todo),
@@ -63,7 +87,7 @@ export function addToDo(payload: ToDoPayload): Result<ToDo, string> {
     if(err.length > 0){
         return Result.Err<ToDo,string>(err)
     }
-    const todo: ToDo = { id: uuidv4(), created_at: ic.time(), updated_at: Opt.None, completed: false, ...payload }
+    const todo: ToDo = { id: uuidv4(), created_at: ic.time(), updated_at: Opt.None, completed: false, fav: false, ...payload }
     todosStorage.insert(todo.id, todo)
     return Result.Ok(todo)
 }
@@ -100,6 +124,18 @@ export function completeToDo(id: string): Result<ToDo, string> {
                 return Result.Err<ToDo, string>(`To-do with ${id} has already been completed.`)
             }
             const updatedToDo: ToDo = {...todo, completed: true, updated_at: Opt.Some(ic.time())}
+            todosStorage.insert(todo.id, updatedToDo)
+            return Result.Ok<ToDo, string>(updatedToDo)
+        },
+        None: () => Result.Err<ToDo, string>(`couldn't update a todo with id=${id}. todo not found`)
+    })
+}
+
+$update
+export function setFavTodo(id: string, fav: boolean): Result<ToDo, string> {
+    return match(todosStorage.get(id), {
+        Some: (todo) => {
+            const updatedToDo: ToDo = {...todo, fav: fav, updated_at: Opt.Some(ic.time())}
             todosStorage.insert(todo.id, updatedToDo)
             return Result.Ok<ToDo, string>(updatedToDo)
         },
