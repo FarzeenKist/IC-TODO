@@ -62,7 +62,7 @@ export function getToDo(id: string): Result<ToDo, string> {
     return match(todosStorage.get(id), {
         Some: (todo) => {
             if(todo.owner.toString() !== ic.caller().toString()){
-                Result.Err<ToDo, string>("Not owner of todo")
+                return Result.Err<ToDo, string>("Not owner of todo")
             }
             return Result.Ok<ToDo, string>(todo)
         },
