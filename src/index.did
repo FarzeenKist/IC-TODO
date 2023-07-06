@@ -3,6 +3,7 @@ type ToDo = record {
   tag : text;
   title : text;
   updated_at : opt nat64;
+  owner : principal;
   body : text;
   completed : bool;
   created_at : nat64;
